@@ -6,50 +6,90 @@ import json
 from pathlib import Path
 
 # --- Configuration ---
-st.set_page_config(page_title="1080p Converter", page_icon="✨", layout="centered")
+st.set_page_config(
+    page_title="TRT Video Standardizer", 
+    page_icon="🎬", 
+    layout="centered"
+)
 
-# --- Modern UI Styling ---
-st.markdown("""
+# --- Brand Configuration ---
+BRAND_COLOR = "#4fb7a0"
+BRAND_HOVER = "#3caea3" # Slightly darker for hover effects
+
+# --- Modern UI Styling (Tony Reviews Things Theme) ---
+st.markdown(f"""
     <style>
+    /* Main Background adjustments if needed */
+    .stApp {{
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }}
+
     /* Header styling */
-    h1 {
-        font-family: 'Helvetica Neue', sans-serif;
-        font-weight: 700;
+    h1 {{
+        color: #2c3e50;
+        font-weight: 800;
         text-align: center;
+        letter-spacing: -1px;
         padding-bottom: 0.5rem;
-    }
+    }}
     
-    /* Subheader styling */
-    .description {
+    /* Subheader/Description styling */
+    .description {{
         text-align: center;
         color: #6c757d;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-    }
+        font-size: 1.15rem;
+        margin-bottom: 3rem;
+        font-weight: 300;
+    }}
     
-    /* Main Action Button Styling */
-    .stButton>button {
-        width: 100%;
-        border-radius: 12px;
+    /* Branding Accent Line */
+    .brand-divider {{
+        height: 4px;
+        width: 60px;
+        background-color: {BRAND_COLOR};
+        margin: 0 auto 20px auto;
+        border-radius: 2px;
+    }}
+
+    /* Primary Action Button Styling */
+    div.stButton > button:first-child {{
+        background-color: {BRAND_COLOR};
+        color: white;
+        border: none;
+        border-radius: 8px;
         font-weight: 600;
-        height: 3rem;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+        letter-spacing: 0.5px;
+        height: 3.5rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(79, 183, 160, 0.2);
+    }}
     
-    .stButton>button:hover {
+    div.stButton > button:first-child:hover {{
+        background-color: {BRAND_HOVER};
         transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
-    }
+        box-shadow: 0 6px 15px rgba(79, 183, 160, 0.3);
+        color: white;
+    }}
     
+    div.stButton > button:first-child:active {{
+        transform: translateY(0);
+    }}
+
     /* Success/Result Cards */
-    .result-card {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 10px;
-        margin-bottom: 10px;
+    .result-card {{
+        background-color: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
         border: 1px solid #e9ecef;
-    }
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }}
+    
+    /* File Uploader Customization */
+    [data-testid='stFileUploader'] {{
+        border-radius: 12px;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -106,20 +146,21 @@ def convert_video(input_path, output_path):
 # --- UI Layout ---
 
 # Header Section
-st.markdown("<h1>✨ Video Standardizer</h1>", unsafe_allow_html=True)
-st.markdown("<p class='description'>Upload your videos to automatically format them to standard 1080p.</p>", unsafe_allow_html=True)
+st.markdown("<h1>Video Standardizer</h1>", unsafe_allow_html=True)
+st.markdown("<div class='brand-divider'></div>", unsafe_allow_html=True)
+st.markdown("<p class='description'>Format your Sora generations for the Tony Reviews Things feed.</p>", unsafe_allow_html=True)
 
 # Main Interface
 with st.container():
-    uploaded_files = st.file_uploader("", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Drop your raw files here", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True)
 
 if uploaded_files:
     st.write("---")
     # Center the action button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # type="primary" gives it the accent color
-        start_btn = st.button(f"🚀 Convert {len(uploaded_files)} Videos", type="primary")
+        # The styling for this button is handled in the CSS injection above
+        start_btn = st.button(f"🚀 Process {len(uploaded_files)} Videos")
     
     if start_btn:
         progress_bar = st.progress(0)
@@ -130,11 +171,11 @@ if uploaded_files:
             
             for i, uploaded_file in enumerate(uploaded_files):
                 # UI Status Update
-                status_area.caption(f"Processing {i+1}/{len(uploaded_files)}: {uploaded_file.name}...")
+                status_area.info(f"Processing **{uploaded_file.name}** ({i+1}/{len(uploaded_files)})...")
                 
                 # 1. Save uploaded file
                 input_file_path = temp_path / uploaded_file.name
-                output_filename = f"1080p_{uploaded_file.name}"
+                output_filename = f"TRT_1080p_{uploaded_file.name}"
                 output_file_path = temp_path / output_filename
                 
                 with open(input_file_path, "wb") as f:
@@ -147,21 +188,22 @@ if uploaded_files:
                 if success:
                     with open(output_file_path, "rb") as f:
                         # Create a nice layout for the result
-                        with st.container():
-                            c1, c2 = st.columns([3, 2])
-                            with c1:
-                                st.success(f"Ready: {output_filename}")
-                            with c2:
-                                st.download_button(
-                                    label="⬇️ Download",
-                                    data=f,
-                                    file_name=output_filename,
-                                    mime="video/mp4",
-                                    key=f"dl_{i}",
-                                    use_container_width=True
-                                )
+                        st.markdown("<div class='result-card'>", unsafe_allow_html=True)
+                        c1, c2 = st.columns([3, 2])
+                        with c1:
+                            st.success(f"✅ Ready: {output_filename}")
+                        with c2:
+                            st.download_button(
+                                label="⬇️ Download Video",
+                                data=f,
+                                file_name=output_filename,
+                                mime="video/mp4",
+                                key=f"dl_{i}",
+                                use_container_width=True
+                            )
+                        st.markdown("</div>", unsafe_allow_html=True)
                 else:
-                    st.error(f"Failed to process {uploaded_file.name}")
+                    st.error(f"❌ Failed to process {uploaded_file.name}")
                 
                 # Update progress
                 progress_bar.progress((i + 1) / len(uploaded_files))
